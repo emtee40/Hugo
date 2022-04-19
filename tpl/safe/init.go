@@ -73,6 +73,13 @@ func init() {
 			[][2]string{},
 		)
 
+		ns.AddMethodMapping(func(v any) (any, error) {
+			return v, nil
+		},
+			[]string{"try"},
+			[][2]string{},
+		)
+
 		return ns
 	}
 

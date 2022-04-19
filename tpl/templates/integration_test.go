@@ -83,3 +83,38 @@ post/doesnotexist.html: false
 
 `)
 }
+
+func TestTry(t *testing.T) {
+	t.Parallel()
+
+	files := `
+-- config.toml --
+baseURL = 'http://example.com/'
+-- layouts/index.html --
+{{ $g :=  try ("hello = \"Hello Hugo\"" | transform.Unmarshal)   }}
+{{ with $g.Err }}
+Err1: {{ . }}
+{{ else }}
+Value1: {{ $g.Value.hello | safeHTML }}|
+{{ end }}
+{{ $g :=  try ("hello != \"Hello Hugo\"" | transform.Unmarshal)   }}
+{{ with $g.Err }}
+Err2: {{ . | safeHTML }}
+{{ else }}
+Value2: {{ $g.Value.hello | safeHTML }}|
+{{ end }}
+
+  `
+
+	b := hugolib.NewIntegrationTestBuilder(
+		hugolib.IntegrationTestConfig{
+			T:           t,
+			TxtarString: files,
+		},
+	).Build()
+
+	b.AssertFileContent("public/index.html",
+		"Value1: Hello Hugo|",
+		"Err2: template: index.html:7:52: executing \"index.html\" at <transform.Unmarshal>: error calling Unmarshal: unmarshal failed: toml: expected character =",
+	)
+}
