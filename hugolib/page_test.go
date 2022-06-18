@@ -1117,18 +1117,6 @@ Content
 	}
 }
 
-func TestWordCountWithAllCJKRunesWithoutHasCJKLanguage(t *testing.T) {
-	t.Parallel()
-	assertFunc := func(t *testing.T, ext string, pages page.Pages) {
-		p := pages[0]
-		if p.WordCount() != 8 {
-			t.Fatalf("[%s] incorrect word count. expected %v, got %v", ext, 8, p.WordCount())
-		}
-	}
-
-	testAllMarkdownEnginesForPages(t, assertFunc, nil, simplePageWithAllCJKRunes)
-}
-
 func TestWordCountWithAllCJKRunesHasCJKLanguage(t *testing.T) {
 	t.Parallel()
 	settings := map[string]any{"hasCJKLanguage": true}
@@ -1161,7 +1149,31 @@ func TestWordCountWithMainEnglishWithCJKRunes(t *testing.T) {
 	testAllMarkdownEnginesForPages(t, assertFunc, settings, simplePageWithMainEnglishWithCJKRunes)
 }
 
-func TestWordCountWithIsCJKLanguageFalse(t *testing.T) {
+func TestReadingTimeCJKMixed(t *testing.T) {
+	t.Parallel()
+
+	simplePage := fmt.Sprintf(`---
+title: Simple
+---
+
+%s
+
+%s
+
+`, strings.Repeat("hello 你好 ", 2130), strings.Repeat("好", 750))
+	// 2130 * 2 + 750 = 10 * 501 -> 10 minutes of reading
+
+	assertFunc := func(t *testing.T, ext string, pages page.Pages) {
+		p := pages[0]
+		if p.ReadingTime() != 20 {
+			t.Fatalf("[%s] incorrect min read. expected %v, got %v", ext, 20, p.ReadingTime())
+		}
+	}
+
+	testAllMarkdownEnginesForPages(t, assertFunc, nil, simplePage)
+}
+
+func TestSummaryWithIsCJKLanguageFalse(t *testing.T) {
 	t.Parallel()
 	settings := map[string]any{
 		"hasCJKLanguage": true,
@@ -1169,10 +1181,6 @@ func TestWordCountWithIsCJKLanguageFalse(t *testing.T) {
 
 	assertFunc := func(t *testing.T, ext string, pages page.Pages) {
 		p := pages[0]
-		if p.WordCount() != 75 {
-			t.Fatalf("[%s] incorrect word count for content '%s'. expected %v, got %v", ext, p.Plain(), 74, p.WordCount())
-		}
-
 		if p.Summary() != simplePageWithIsCJKLanguageFalseSummary {
 			t.Fatalf("[%s] incorrect Summary for content '%s'. expected %v, got %v", ext, p.Plain(),
 				simplePageWithIsCJKLanguageFalseSummary, p.Summary())
@@ -1781,9 +1789,9 @@ Summary: In Chinese, 好 means good.
 	b.AssertFileContent("public/p2/index.html", "WordCount: 314\nFuzzyWordCount: 400\nReadingTime: 2\nLen Plain: 1569\nLen PlainWords: 314\nTruncated: true\nLen Summary: 25\nLen Content: 1582")
 
 	b.AssertFileContent("public/p3/index.html", "WordCount: 206\nFuzzyWordCount: 300\nReadingTime: 1\nLen Plain: 638\nLen PlainWords: 7\nTruncated: true\nLen Summary: 43\nLen Content: 651")
-	b.AssertFileContent("public/p4/index.html", "WordCount: 7\nFuzzyWordCount: 100\nReadingTime: 1\nLen Plain: 638\nLen PlainWords: 7\nTruncated: true\nLen Summary: 43\nLen Content: 651")
+	b.AssertFileContent("public/p4/index.html", "WordCount: 206\nFuzzyWordCount: 300\nReadingTime: 1\nLen Plain: 638\nLen PlainWords: 7\nTruncated: true\nLen Summary: 43\nLen Content: 651")
 	b.AssertFileContent("public/p5/index.html", "WordCount: 206\nFuzzyWordCount: 300\nReadingTime: 1\nLen Plain: 638\nLen PlainWords: 7\nTruncated: true\nLen Summary: 229\nLen Content: 652")
-	b.AssertFileContent("public/p6/index.html", "WordCount: 7\nFuzzyWordCount: 100\nReadingTime: 1\nLen Plain: 638\nLen PlainWords: 7\nTruncated: false\nLen Summary: 637\nLen Content: 652")
+	b.AssertFileContent("public/p6/index.html", "WordCount: 206\nFuzzyWordCount: 300\nReadingTime: 1\nLen Plain: 638\nLen PlainWords: 7\nTruncated: false\nLen Summary: 637\nLen Content: 652")
 }
 
 func TestScratch(t *testing.T) {

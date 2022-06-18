@@ -261,7 +261,7 @@ Google Analytics tracking ID.
 
 **Default value:** false
 
-If true, auto-detect Chinese/Japanese/Korean Languages in the content. This will make `.Summary` and `.WordCount` behave correctly for CJK languages.
+If true, auto-detect Chinese/Japanese/Korean Languages in the content. This will make `.Summary` behave correctly for CJK languages.
 
 ### imaging
 
