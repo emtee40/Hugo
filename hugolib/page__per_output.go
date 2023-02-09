@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"math"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -204,7 +205,7 @@ func newPageContentOutput(p *pageState, po *pageOutput) (*pageContentOutput, err
 	cp.initPlain = cp.initMain.Branch(func() (any, error) {
 		cp.plain = tpl.StripHTML(string(cp.content))
 		cp.plainWords = strings.Fields(cp.plain)
-		cp.setWordCounts(p.m.isCJKLanguage)
+		cp.setWordCounts()
 
 		if err := cp.setAutoSummary(); err != nil {
 			return err, nil
@@ -656,31 +657,29 @@ func (cp *pageContentOutput) renderContentWithConverter(c converter.Converter, c
 	return r, err
 }
 
-func (p *pageContentOutput) setWordCounts(isCJKLanguage bool) {
-	if isCJKLanguage {
-		p.wordCount = 0
-		for _, word := range p.plainWords {
-			runeCount := utf8.RuneCountInString(word)
-			if len(word) == runeCount {
-				p.wordCount++
-			} else {
-				p.wordCount += runeCount
-			}
+func (p *pageContentOutput) setWordCounts() {
+	cjkWordCount := 0
+	nonCjkWordCount := 0
+	for _, word := range p.plainWords {
+		runeCount := utf8.RuneCountInString(word)
+		if len(word) == runeCount {
+			nonCjkWordCount++
+		} else {
+			cjkWordCount += runeCount
 		}
-	} else {
-		p.wordCount = helpers.TotalWords(p.plain)
 	}
+
+	p.wordCount = nonCjkWordCount + cjkWordCount
 
 	// TODO(bep) is set in a test. Fix that.
 	if p.fuzzyWordCount == 0 {
 		p.fuzzyWordCount = (p.wordCount + 100) / 100 * 100
 	}
 
-	if isCJKLanguage {
-		p.readingTime = (p.wordCount + 500) / 501
-	} else {
-		p.readingTime = (p.wordCount + 212) / 213
-	}
+	cjkReadingTime := float64(cjkWordCount) / 501
+	nonCjkReadingTime := float64(nonCjkWordCount) / 213
+
+	p.readingTime = int(math.Ceil(cjkReadingTime + nonCjkReadingTime))
 }
 
 // A callback to signal that we have inserted a placeholder into the rendered
